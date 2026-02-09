@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordinals Listings Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Archivo+Black&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #151932;
+            --bg-card: #1a1f3a;
+            --text-primary: #e8eaf6;
+            --text-secondary: #9fa8da;
+            --text-muted: #5c6bc0;
+            --accent-magic: #e936e9;
+            --accent-unisat: #ff9800;
+            --accent-ordinals: #00e5ff;
+            --accent-bitcoin: #f7931a;
+            --border: #283593;
+            --success: #4caf50;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(233, 54, 233, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 152, 0, 0.05) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(233, 54, 233, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        h1 {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--accent-magic), var(--accent-unisat), var(--accent-ordinals));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .wallet-info {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.75rem 2rem;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+            border-radius: 0;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        button:hover {
+            border-color: var(--accent-magic);
+            box-shadow: 0 0 20px rgba(233, 54, 233, 0.3);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent-magic);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-title {
+            font-family: 'Archivo Black', sans-serif;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section-count {
+            background: var(--accent-bitcoin);
+            color: var(--bg-primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .collection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .item-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .item-card:hover {
+            border-color: var(--accent-magic);
+            box-shadow: 0 8px 30px rgba(233, 54, 233, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .item-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .item-collection {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            letter-spacing: 0.1em;
+        }
+
+        .marketplace-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .marketplace-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .marketplace-link:hover {
+            transform: translateX(4px);
+        }
+
+        .marketplace-link.magic-eden {
+            border-left: 3px solid var(--accent-magic);
+        }
+
+        .marketplace-link.magic-eden:hover {
+            background: rgba(233, 54, 233, 0.1);
+            border-color: var(--accent-magic);
+        }
+
+        .marketplace-link.unisat {
+            border-left: 3px solid var(--accent-unisat);
+        }
+
+        .marketplace-link.unisat:hover {
+            background: rgba(255, 152, 0, 0.1);
+            border-color: var(--accent-unisat);
+        }
+
+        .marketplace-link.ordinals-wallet {
+            border-left: 3px solid var(--accent-ordinals);
+        }
+
+        .marketplace-link.ordinals-wallet:hover {
+            background: rgba(0, 229, 255, 0.1);
+            border-color: var(--accent-ordinals);
+        }
+
+        .marketplace-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .marketplace-link.magic-eden .marketplace-name {
+            color: var(--accent-magic);
+        }
+
+        .marketplace-link.unisat .marketplace-name {
+            color: var(--accent-unisat);
+        }
+
+        .marketplace-link.ordinals-wallet .marketplace-name {
+            color: var(--accent-ordinals);
+        }
+
+        .price {
+            font-weight: 700;
+            color: var(--accent-bitcoin);
+            font-size: 1rem;
+        }
+
+        .no-listings {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 2px solid #f44336;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #ff8a80;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-bitcoin);
+            font-family: 'Archivo Black', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 0.5rem;
+        }
+
+        .runes-section {
+            margin-top: 3rem;
+            padding-top: 3rem;
+            border-top: 2px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .collection-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔶 Ordinals Dashboard</h1>
+            <p class="wallet-info">Tracking 3 wallets across Magic Eden, UniSat & Ordinals Wallet</p>
+        </header>
+
+        <div class="controls">
+            <button onclick="loadAllData()" id="refreshBtn">🔄 Refresh Data</button>
+        </div>
+
+        <div id="stats" class="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="totalListings">0</div>
+                <div class="stat-label">Total Listings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalValue">0 BTC</div>
+                <div class="stat-label">Total Value</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="marketplaceCount">0</div>
+                <div class="stat-label">Active Marketplaces</div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div>Loading your listings...</div>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- Bitmap Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📍 Bitmap</h2>
+                    <span class="section-count" id="bitmapCount">0</span>
+                </div>
+                <div id="bitmapListings" class="collection-grid"></div>
+            </div>
+
+            <!-- Sats Names Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🏷️ Sats Names</h2>
+                    <span class="section-count" id="satsNamesCount">0</span>
+                </div>
+                <div id="satsNamesListings" class="collection-grid"></div>
+            </div>
+
+            <!-- No Collection Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🔸 Uncategorized</h2>
+                    <span class="section-count" id="noCollectionCount">0</span>
+                </div>
+                <div id="noCollectionListings" class="collection-grid"></div>
+            </div>
+
+            <!-- Runes Section -->
+            <div class="section runes-section">
+                <div class="section-header">
+                    <h2 class="section-title">⚡ Runes & Fungible Tokens</h2>
+                    <span class="section-count" id="runesCount">0</span>
+                </div>
+                <div id="runesListings" class="collection-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WALLETS = [
+            'bc1pk8zlv5rvpvv3zxj66tsckdu4j3krtlyh4usnkg6psxthfgxjj38q6f4ftr',
+            'bc1p6swqr8u5geva536f66rsqswg7ewvcva73zzeu2c8s5zc327tyndsxu2tl9',
+            'bc1pa9zrvmgwvdgtwk8alzcvehhwhelypx6f2lalk9uj9xja9ye8euesvxdery'
+        ];
+
+        let allListings = [];
+
+        // CORS proxy - set to empty string when deployed to GitHub Pages
+        // For local testing, use: 'https://corsproxy.io/?'
+        const CORS_PROXY = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'https://corsproxy.io/?' 
+            : '';
+
+        // API endpoints
+        const MAGIC_EDEN_BASE = 'https://api-mainnet.magiceden.dev/v2/ord/btc';
+        const UNISAT_BASE = 'https://open-api.unisat.io';
+        const ORDINALS_WALLET_BASE = 'https://turbo.ordinalswallet.com';
+
+        async function fetchWithRetry(url, options = {}, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        async function fetchMagicEdenListings(wallet) {
+            try {
+                // Magic Eden endpoint for wallet tokens/listings
+                const url = `${MAGIC_EDEN_BASE}/tokens?ownerAddress=${wallet}&listed=true&limit=100`;
+                const data = await fetchWithRetry(url);
+                
+                return (data.tokens || []).map(item => ({
+                    id: item.id,
+                    name: item.meta?.name || item.inscriptionNumber || item.id,
+                    collection: item.collectionSymbol || 'no-collection',
+                    price: item.listedPrice ? (item.listedPrice / 100000000) : null,
+                    marketplace: 'magic-eden',
+                    url: `https://magiceden.io/ordinals/item-details/${item.id}`,
+                    inscriptionId: item.id
+                }));
+            } catch (error) {
+                console.error('Magic Eden error:', error);
+                return [];
+            }
+        }
+
+        async function fetchUnisatListings(wallet) {
+            try {
+                // UniSat uses different endpoint structure
+                // This is a placeholder - UniSat requires API key for most endpoints
+                // We'll try their public market endpoint
+                const url = `${UNISAT_BASE}/v1/indexer/address/${wallet}/inscription-utxo-data`;
+                const data = await fetchWithRetry(url, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                // Filter for listed items (this may need adjustment based on actual API response)
+                return (data.data?.utxo || [])
+                    .filter(item => item.listed)
+                    .map(item => ({
+                        id: item.inscriptionId,
+                        name: item.inscriptionNumber || item.inscriptionId,
+                        collection: item.contentType?.includes('bitmap') ? 'bitmap' : 
+                                   item.contentType?.includes('sats') ? 'sats-names' : 'no-collection',
+                        price: item.price ? (item.price / 100000000) : null,
+                        marketplace: 'unisat',
+                        url: `https://unisat.io/inscription/${item.inscriptionId}`,
+                        inscriptionId: item.inscriptionId
+                    }));
+            } catch (error) {
+                console.error('UniSat error:', error);
+                return [];
+            }
+        }
+
+        async function fetchOrdinalsWalletListings(wallet) {
+            try {
+                // Ordinals Wallet endpoint
+                const url = `${ORDINALS_WALLET_BASE}/wallet/${wallet}/inscriptions`;
+                const data = await fetchWithRetry(url);
+                
+                return (data.inscriptions || [])
+                    .filter(item => item.listed)
+                    .map(item => ({
+                        id: item.id,
+                        name: item.number || item.id,
+                        collection: detectCollection(item),
+                        price: item.price ? (item.price / 100000000) : null,
+                        marketplace: 'ordinals-wallet',
+                        url: `https://ordinalswallet.com/inscription/${item.id}`,
+                        inscriptionId: item.id
+                    }));
+            } catch (error) {
+                console.error('Ordinals Wallet error:', error);
+                return [];
+            }
+        }
+
+        async function fetchRunesData(wallet) {
+            try {
+                // Magic Eden Runes endpoint
+                const url = `${MAGIC_EDEN_BASE}/runes/wallet/balances/${wallet}`;
+                const data = await fetchWithRetry(url);
+                
+                return (data.runes || [])
+                    .filter(rune => rune.listed)
+                    .map(rune => ({
+                        id: rune.runeName,
+                        name: rune.runeName,
+                        collection: 'runes',
+                        price: rune.listedPrice ? (rune.listedPrice / 100000000) : null,
+                        marketplace: 'magic-eden',
+                        url: `https://magiceden.io/runes/${rune.runeName}`,
+                        type: 'RUNE'
+                    }));
+            } catch (error) {
+                console.error('Runes error:', error);
+                return [];
+            }
+        }
+
+        function detectCollection(item) {
+            const name = (item.name || item.meta?.name || '').toLowerCase();
+            const contentType = (item.contentType || '').toLowerCase();
+            
+            if (name.includes('bitmap') || contentType.includes('bitmap')) {
+                return 'bitmap';
+            }
+            if (name.includes('.sats') || name.includes('sats.names')) {
+                return 'sats-names';
+            }
+            return 'no-collection';
+        }
+
+        function categorizeListings(listings) {
+            const categories = {
+                bitmap: [],
+                'sats-names': [],
+                'no-collection': [],
+                runes: []
+            };
+
+            listings.forEach(listing => {
+                const collection = listing.collection;
+                if (collection === 'runes') {
+                    categories.runes.push(listing);
+                } else if (collection === 'bitmap') {
+                    categories.bitmap.push(listing);
+                } else if (collection === 'sats-names') {
+                    categories['sats-names'].push(listing);
+                } else {
+                    categories['no-collection'].push(listing);
+                }
+            });
+
+            return categories;
+        }
+
+        function createItemCard(item) {
+            const marketplaceClass = item.marketplace.replace('-', '-');
+            const marketplaceName = {
+                'magic-eden': 'Magic Eden',
+                'unisat': 'UniSat',
+                'ordinals-wallet': 'Ordinals Wallet'
+            }[item.marketplace] || item.marketplace;
+
+            return `
+                <div class="item-card">
+                    <div class="item-name">${escapeHtml(item.name)}</div>
+                    <div class="item-collection">${escapeHtml(item.collection.replace('-', ' '))}</div>
+                    <div class="marketplace-links">
+                        <a href="${item.url}" target="_blank" class="marketplace-link ${marketplaceClass}">
+                            <span class="marketplace-name">${marketplaceName}</span>
+                            <span class="price">${item.price ? item.price.toFixed(8) + ' BTC' : 'Price N/A'}</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderListings(categories) {
+            // Render Bitmap
+            const bitmapEl = document.getElementById('bitmapListings');
+            const bitmapCount = document.getElementById('bitmapCount');
+            if (categories.bitmap.length > 0) {
+                bitmapEl.innerHTML = categories.bitmap.map(createItemCard).join('');
+                bitmapCount.textContent = categories.bitmap.length;
+            } else {
+                bitmapEl.innerHTML = '<div class="no-listings">No bitmap listings found</div>';
+                bitmapCount.textContent = '0';
+            }
+
+            // Render Sats Names
+            const satsEl = document.getElementById('satsNamesListings');
+            const satsCount = document.getElementById('satsNamesCount');
+            if (categories['sats-names'].length > 0) {
+                satsEl.innerHTML = categories['sats-names'].map(createItemCard).join('');
+                satsCount.textContent = categories['sats-names'].length;
+            } else {
+                satsEl.innerHTML = '<div class="no-listings">No sats names listings found</div>';
+                satsCount.textContent = '0';
+            }
+
+            // Render No Collection
+            const noCollEl = document.getElementById('noCollectionListings');
+            const noCollCount = document.getElementById('noCollectionCount');
+            if (categories['no-collection'].length > 0) {
+                noCollEl.innerHTML = categories['no-collection'].map(createItemCard).join('');
+                noCollCount.textContent = categories['no-collection'].length;
+            } else {
+                noCollEl.innerHTML = '<div class="no-listings">No uncategorized listings found</div>';
+                noCollCount.textContent = '0';
+            }
+
+            // Render Runes
+            const runesEl = document.getElementById('runesListings');
+            const runesCount = document.getElementById('runesCount');
+            if (categories.runes.length > 0) {
+                runesEl.innerHTML = categories.runes.map(createItemCard).join('');
+                runesCount.textContent = categories.runes.length;
+            } else {
+                runesEl.innerHTML = '<div class="no-listings">No runes listings found</div>';
+                runesCount.textContent = '0';
+            }
+
+            // Update stats
+            const totalListings = allListings.length;
+            const totalValue = allListings.reduce((sum, item) => sum + (item.price || 0), 0);
+            const marketplaces = new Set(allListings.map(item => item.marketplace)).size;
+
+            document.getElementById('totalListings').textContent = totalListings;
+            document.getElementById('totalValue').textContent = totalValue.toFixed(8) + ' BTC';
+            document.getElementById('marketplaceCount').textContent = marketplaces;
+            document.getElementById('stats').style.display = totalListings > 0 ? 'grid' : 'none';
+        }
+
+        async function loadAllData() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').style.display = 'none';
+
+            try {
+                allListings = [];
+
+                // Fetch from all wallets and marketplaces
+                for (const wallet of WALLETS) {
+                    const [magicEden, unisat, ordinalsWallet, runes] = await Promise.all([
+                        fetchMagicEdenListings(wallet),
+                        fetchUnisatListings(wallet),
+                        fetchOrdinalsWalletListings(wallet),
+                        fetchRunesData(wallet)
+                    ]);
+
+                    allListings.push(...magicEden, ...unisat, ...ordinalsWallet, ...runes);
+                }
+
+                // Remove duplicates based on inscription ID
+                const uniqueListings = Array.from(
+                    new Map(allListings.map(item => [item.inscriptionId || item.id, item])).values()
+                );
+
+                allListings = uniqueListings;
+
+                const categories = categorizeListings(allListings);
+                renderListings(categories);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').innerHTML = `
+                    <div class="error">
+                        <strong>Error loading data:</strong> ${error.message}
+                        <br><br>
+                        This might be due to API rate limits or CORS restrictions.
+                        <br>
+                        Try refreshing in a few moments.
+                    </div>
+                `;
+            } finally {
+                refreshBtn.disabled = false;
+            }
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', loadAllData);
+    </script>
+</body>
+</html>
